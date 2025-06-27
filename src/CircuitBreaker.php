@@ -23,6 +23,8 @@ class CircuitBreaker implements CircuitBreakerContract
 
     private FailureStrategyContract $strategy;
 
+    private int $halfOpenDelay;
+
     public function __construct(
         private string $name,
         private CacheContract $cache,
@@ -31,6 +33,7 @@ class CircuitBreaker implements CircuitBreakerContract
         array $config = []
     ) {
         $this->strategy = $config['strategy'] ?? new TimeWindowStrategy($config);
+        $this->halfOpenDelay = $config['half_open_delay'] ?? 500;
     }
 
     /**
@@ -88,7 +91,7 @@ class CircuitBreaker implements CircuitBreakerContract
             }
 
             return false;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('CircuitBreaker cache failure, failing open', [
                 'breaker' => $this->name,
                 'exception' => $e->getMessage(),
@@ -110,7 +113,7 @@ class CircuitBreaker implements CircuitBreakerContract
             }
 
             $this->cache->forget($this->getKey('failures'));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('CircuitBreaker cache failure on recordSuccess', [
                 'breaker' => $this->name,
                 'exception' => $e->getMessage(),
@@ -130,6 +133,7 @@ class CircuitBreaker implements CircuitBreakerContract
                 $this->transitionToOpen();
                 $this->notify("Circuit breaker opened after {$failures} failures.");
             } elseif ($this->isHalfOpen()) {
+                $this->setKey('last_half_open_attempt', microtime(true));
                 $this->cache->increment($this->getKey('half_open_attempts'));
                 $halfOpenAttempts = $this->cache->get($this->getKey('half_open_attempts'), 0);
 
@@ -138,7 +142,7 @@ class CircuitBreaker implements CircuitBreakerContract
                     $this->notify("Circuit breaker reopened after {$halfOpenAttempts} half-open attempts.");
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('CircuitBreaker cache failure during recordFailure', [
                 'breaker' => $this->name,
                 'error' => $e->getMessage(),
@@ -154,7 +158,7 @@ class CircuitBreaker implements CircuitBreakerContract
         try {
             $this->transitionToClosed();
             $this->logger->info("CircuitBreaker '{$this->name}' manually reset to CLOSED state at {$this->getTimestamp()}.");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->logger->warning('CircuitBreaker cache failure during reset', [
                 'breaker' => $this->name,
                 'exception' => $e->getMessage(),
@@ -196,13 +200,34 @@ class CircuitBreaker implements CircuitBreakerContract
     }
 
     /**
+     * Return the wait time before retrying.
+     */
+    public function getWaitTime(): int
+    {
+        if (! $this->isHalfOpen()) {
+            return 0;
+        }
+
+        $lastAttempt = $this->cache->get($this->getKey('last_half_open_attempt'), 0);
+        $timeSinceLastAttempt = (microtime(true) - $lastAttempt) * 1000; // Convert to ms
+        $minDelay = $this->halfOpenDelay;
+
+        if ($timeSinceLastAttempt < $minDelay) {
+            return (int) ($minDelay - $timeSinceLastAttempt);
+        }
+
+        return 0;
+    }
+
+    /**
      * Transition circuit to open state when failure threshold is exceeded.
      */
-    public function transitionToOpen(): void
+    protected function transitionToOpen(): void
     {
         $this->setKey('state', self::STATE_OPEN);
         $this->setKey('opened_at', Carbon::now()->timestamp);
         $this->cache->forget($this->getKey('half_open_attempts'));
+        $this->cache->forget($this->getKey('last_half_open_attempt'));
 
         $this->logger->warning("CircuitBreaker '{$this->name}' transitioned to OPEN state at {$this->getTimestamp()}.", $this->getStats());
     }
@@ -210,10 +235,11 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Transition circuit to half-open state for recovery testing.
      */
-    public function transitionToHalfOpen(): void
+    protected function transitionToHalfOpen(): void
     {
         $this->setKey('state', self::STATE_HALF_OPEN);
         $this->setKey('half_open_attempts', 0);
+        $this->setKey('last_half_open_attempt', microtime(true));
 
         $this->logger->warning("CircuitBreaker '{$this->name}' transitioned to HALF_OPEN state at {$this->getTimestamp()}.", $this->getStats());
     }
@@ -221,12 +247,13 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Transition circuit to closed state after successful recovery.
      */
-    public function transitionToClosed(): void
+    protected function transitionToClosed(): void
     {
         $this->cache->forget($this->getKey('state'));
         $this->cache->forget($this->getKey('failures'));
         $this->cache->forget($this->getKey('opened_at'));
         $this->cache->forget($this->getKey('half_open_attempts'));
+        $this->cache->forget($this->getKey('last_half_open_attempt'));
 
         $this->logger->info("CircuitBreaker '{$this->name}' transitioned to CLOSED state at {$this->getTimestamp()}.", $this->getStats());
     }
@@ -234,7 +261,7 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Generate cache key for storing circuit breaker state data.
      */
-    public function getKey(string $name): string
+    protected function getKey(string $name): string
     {
         return "circuit_breaker:{$this->name}:$name";
     }
@@ -242,7 +269,7 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Store value in cache with TTL.
      */
-    public function setKey(string $name, mixed $value, ?int $ttl = null): void
+    protected function setKey(string $name, mixed $value, ?int $ttl = null): void
     {
         $this->cache->put($this->getKey($name), $value, $ttl);
     }
@@ -250,7 +277,7 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Return current timestamp in standardized format.
      */
-    public function getTimestamp(): string
+    protected function getTimestamp(): string
     {
         return Carbon::now()->format('Y-m-d H:i:s T');
     }
@@ -258,7 +285,7 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Send admin notification about circuit breaker state changes.
      */
-    public function notify(string $message): void
+    protected function notify(string $message): void
     {
         try {
             $subject = "Circuit breaker alert: {$this->name}";
@@ -283,7 +310,7 @@ class CircuitBreaker implements CircuitBreakerContract
     /**
      * Build email content for admin notifications with circuit breaker details.
      */
-    public function buildNotificationContent(string $message, array $stats): string
+    protected function buildNotificationContent(string $message, array $stats): string
     {
         return "
         Circuit breaker alert

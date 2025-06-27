@@ -14,6 +14,9 @@ use christopheraseidl\CircuitBreaker\Notifiers\ChainNotifier;
 use christopheraseidl\CircuitBreaker\Notifiers\EmailNotifier;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * Registers circuit breaker services and configuration with Laravel container.
+ */
 class CircuitBreakerServiceProvider extends ServiceProvider
 {
     /**
@@ -58,6 +61,9 @@ class CircuitBreakerServiceProvider extends ServiceProvider
         ]);
     }
 
+    /**
+     * Build configured notifier chain.
+     */
     private function buildNotifier(): NotifierContract
     {
         $notifiers = config('circuit-breaker.notifiers', []);

@@ -6,6 +6,9 @@ use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Contracts\CacheContract;
 use christopheraseidl\CircuitBreaker\Contracts\FailureStrategyContract;
 
+/**
+ * Tracks failures within sliding time windows for circuit breaker decisions.
+ */
 class TimeWindowStrategy implements FailureStrategyContract
 {
     private int $failureThreshold;
@@ -16,6 +19,9 @@ class TimeWindowStrategy implements FailureStrategyContract
 
     private int $halfOpenMaxAttempts;
 
+    /**
+     * Create strategy with time window configuration.
+     */
     public function __construct(array $config = [])
     {
         $this->failureThreshold = $config['failure_threshold'] ?? 5;
@@ -24,6 +30,9 @@ class TimeWindowStrategy implements FailureStrategyContract
         $this->halfOpenMaxAttempts = $config['half_open_attempts'] ?? 3;
     }
 
+    /**
+     * Record failure and return current failure count.
+     */
     public function recordFailure(CacheContract $cache, string $key): int
     {
         // Store failure with timestamp
@@ -39,6 +48,9 @@ class TimeWindowStrategy implements FailureStrategyContract
         return count($failures);
     }
 
+    /**
+     * Determine whether circuit should open from closed state.
+     */
     public function shouldOpenFromClosed(CacheContract $cache, string $key): bool
     {
         $windowFailures = $this->getFailuresInWindow($cache, $key);
@@ -46,6 +58,9 @@ class TimeWindowStrategy implements FailureStrategyContract
         return $windowFailures >= $this->failureThreshold;
     }
 
+    /**
+     * Determine whether circuit should open from half-open state.
+     */
     public function shouldOpenFromHalfOpen(CacheContract $cache, string $key): bool
     {
         $halfOpenAttempts = $cache->get($key);
@@ -53,6 +68,9 @@ class TimeWindowStrategy implements FailureStrategyContract
         return $halfOpenAttempts >= $this->halfOpenMaxAttempts;
     }
 
+    /**
+     * Determine whether circuit should half-open from open state.
+     */
     public function shouldHalfOpenFromOpen(CacheContract $cache, string $key): bool
     {
         $openedAt = $cache->get($key);
@@ -65,7 +83,7 @@ class TimeWindowStrategy implements FailureStrategyContract
     }
 
     /**
-     * Get a count of the number of failures within the time window.
+     * Get current failure count within time window.
      */
     public function getCurrentFailureCount(CacheContract $cache, string $key): int
     {
@@ -73,7 +91,7 @@ class TimeWindowStrategy implements FailureStrategyContract
     }
 
     /**
-     * Get an array of statistics for the strategy.
+     * Get strategy statistics array.
      */
     public function getStats(): array
     {
@@ -85,6 +103,9 @@ class TimeWindowStrategy implements FailureStrategyContract
         ];
     }
 
+    /**
+     * Get failure count within current time window.
+     */
     private function getFailuresInWindow(CacheContract $cache, string $key): int
     {
         $failures = $cache->get($key.':timeline', []);
@@ -93,9 +114,13 @@ class TimeWindowStrategy implements FailureStrategyContract
         return count($recentFailures);
     }
 
+    /**
+     * Filter failures to only include those within time window.
+     */
     private function filterOldFailures(array $failures): array
     {
         $now = time();
+        // Keep only failures within the sliding window
         $recentFailures = array_filter($failures, fn ($time) => $time > ($now - $this->windowSeconds));
 
         return $recentFailures;

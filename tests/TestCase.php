@@ -2,7 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests;
 
-use christopheraseidl\CircuitBreaker\CircuitBreakerServiceProvider;
+use christopheraseidl\CircuitBreaker\Laravel\CircuitBreakerServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
 

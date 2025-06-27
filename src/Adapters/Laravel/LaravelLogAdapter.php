@@ -6,10 +6,13 @@ use christopheraseidl\CircuitBreaker\Contracts\LoggerContract;
 use Illuminate\Support\Facades\Log;
 use Psr\Log\LogLevel;
 
+/**
+ * Adapts Laravel Log facade to circuit breaker logger contract.
+ */
 class LaravelLogAdapter implements LoggerContract
 {
     /**
-     * System is unusable.
+     * Log emergency message.
      */
     public function emergency(string|\Stringable $message, array $context = []): void
     {
@@ -17,7 +20,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Action must be taken immediately.
+     * Log alert message.
      */
     public function alert(string|\Stringable $message, array $context = []): void
     {
@@ -25,7 +28,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Critical conditions.
+     * Log critical message.
      */
     public function critical(string|\Stringable $message, array $context = []): void
     {
@@ -33,8 +36,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Runtime errors that do not require immediate action but should typically
-     * be logged and monitored.
+     * Log error message.
      */
     public function error(string|\Stringable $message, array $context = []): void
     {
@@ -42,7 +44,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Exceptional occurrences that are not errors.
+     * Log warning message.
      */
     public function warning(string|\Stringable $message, array $context = []): void
     {
@@ -50,7 +52,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Normal but significant events.
+     * Log notice message.
      */
     public function notice(string|\Stringable $message, array $context = []): void
     {
@@ -58,7 +60,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Interesting events.
+     * Log info message.
      */
     public function info(string|\Stringable $message, array $context = []): void
     {
@@ -66,7 +68,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Detailed debug information.
+     * Log debug message.
      */
     public function debug(string|\Stringable $message, array $context = []): void
     {
@@ -74,7 +76,7 @@ class LaravelLogAdapter implements LoggerContract
     }
 
     /**
-     * Logs with an arbitrary level.
+     * Log message with arbitrary level.
      */
     public function log($level, string|\Stringable $message, array $context = []): void
     {

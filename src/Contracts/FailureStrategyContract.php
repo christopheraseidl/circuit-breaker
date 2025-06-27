@@ -2,10 +2,13 @@
 
 namespace christopheraseidl\CircuitBreaker\Contracts;
 
+/**
+ * Defines failure tracking strategy for circuit breaker state management.
+ */
 interface FailureStrategyContract
 {
     /**
-     * Record a failure and return the current failure count.
+     * Record failure and return current failure count.
      */
     public function recordFailure(CacheContract $cache, string $key): int;
 
@@ -25,12 +28,12 @@ interface FailureStrategyContract
     public function shouldHalfOpenFromOpen(CacheContract $cache, string $key): bool;
 
     /**
-     * Get a count of the number of failures within the time window.
+     * Get current failure count within time window.
      */
     public function getCurrentFailureCount(CacheContract $cache, string $key): int;
 
     /**
-     * Get an array of statistics for the strategy.
+     * Get strategy statistics array.
      */
     public function getStats(): array;
 }

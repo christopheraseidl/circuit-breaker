@@ -2,30 +2,33 @@
 
 namespace christopheraseidl\CircuitBreaker\Contracts;
 
+/**
+ * Defines cache operations for circuit breaker implementations.
+ */
 interface CacheContract
 {
     /**
-     * Store an item in the cache.
+     * Store item in cache.
      */
     public function put(string $key, mixed $value, ?int $ttl = 1): bool;
 
     /**
-     * Retrieve an item from the cache.
+     * Retrieve item from cache.
      */
     public function get(string $key, mixed $default = null): mixed;
 
     /**
-     * Remove an item from the cache.
+     * Remove item from cache.
      */
     public function forget(string $key): bool;
 
     /**
-     * Increment the value of an item in the cache.
+     * Increment cache item value.
      */
     public function increment(string $key, int $value = 1): int|false;
 
     /**
-     * Check if an item exists in the cache.
+     * Check if item exists in cache.
      */
     public function has(string $key): bool;
 }

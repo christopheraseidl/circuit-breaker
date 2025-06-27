@@ -4,15 +4,14 @@
     "keywords": [
         "christopheraseidl",
         "laravel",
-        "circuit-breaker"
+        "circuit breaker"
     ],
     "homepage": "https://github.com/christopheraseidl/circuit-breaker",
     "license": "MIT",
     "authors": [
         {
             "name": "Chris Seidl",
-            "email": "christopheraseidl@gmail.com",
-            "role": "Developer"
+            "email": "christopheraseidl@gmail.com"
         }
     ],
     "require": {
@@ -64,10 +63,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "christopheraseidl\\CircuitBreaker\\CircuitBreakerServiceProvider"
+                "christopheraseidl\\CircuitBreaker\\Laravel\\CircuitBreakerServiceProvider"
             ],
             "aliases": {
-                "CircuitBreaker": "christopheraseidl\\CircuitBreaker\\Laravel\\Facades\\CircuitBreaker"
+                
             }
         }
     },

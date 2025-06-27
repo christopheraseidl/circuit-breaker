@@ -5,13 +5,22 @@ namespace christopheraseidl\CircuitBreaker\Notifiers;
 use christopheraseidl\CircuitBreaker\Contracts\MailerContract;
 use christopheraseidl\CircuitBreaker\Contracts\NotifierContract;
 
+/**
+ * Sends notifications via email with recipient validation.
+ */
 class EmailNotifier implements NotifierContract
 {
+    /**
+     * Create email notifier with mailer and recipient.
+     */
     public function __construct(
         private MailerContract $mailer,
         private string $to
     ) {}
 
+    /**
+     * Send email notification with message and context.
+     */
     public function notify(string $message, array $context = [])
     {
         if (! $this->isValidEmail($this->to)) {
@@ -25,12 +34,16 @@ class EmailNotifier implements NotifierContract
         );
     }
 
+    /**
+     * Validate email address format.
+     */
     protected function isValidEmail(string $email): bool
     {
         if (! $email) {
             return false;
         }
 
+        // Use PHP's built-in email validation
         return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 }

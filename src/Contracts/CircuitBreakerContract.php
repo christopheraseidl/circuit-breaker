@@ -69,42 +69,7 @@ interface CircuitBreakerContract
     public function getStats(): array;
 
     /**
-     * Transition circuit to open state when failure threshold is exceeded.
+     * Return the wait time before retrying
      */
-    public function transitionToOpen(): void;
-
-    /**
-     * Transition circuit to half-open state for recovery testing.
-     */
-    public function transitionToHalfOpen(): void;
-
-    /**
-     * Transition circuit to closed state after successful recovery.
-     */
-    public function transitionToClosed(): void;
-
-    /**
-     * Generate cache key for storing circuit breaker state data.
-     */
-    public function getKey(string $name): string;
-
-    /**
-     * Store value in cache with TTL.
-     */
-    public function setKey(string $name, mixed $value, ?int $ttl = null): void;
-
-    /**
-     * Return current timestamp in standardized format.
-     */
-    public function getTimestamp(): string;
-
-    /**
-     * Send admin notification about circuit breaker state changes.
-     */
-    public function notify(string $message): void;
-
-    /**
-     * Build email content for admin notifications with circuit breaker details.
-     */
-    public function buildNotificationContent(string $message, array $stats): string;
+    public function getWaitTime(): int;
 }
