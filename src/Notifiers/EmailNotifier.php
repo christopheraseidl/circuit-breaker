@@ -15,7 +15,7 @@ class EmailNotifier implements NotifierContract
      */
     public function __construct(
         private MailerContract $mailer,
-        private string $to
+        private array $to
     ) {}
 
     /**
@@ -23,15 +23,26 @@ class EmailNotifier implements NotifierContract
      */
     public function notify(string $message, array $context = [])
     {
-        if (! $this->isValidEmail($this->to)) {
+        if (! $this->areValidEmails($this->to)) {
             return;
         }
 
         $this->mailer->send(
-            $this->to,
+            [$this->to],
             $context['subject'] ?? 'Circuit Breaker Alert',
             $message,
         );
+    }
+
+    protected function areValidEmails(array $recipients): bool
+    {
+        foreach ($recipients as $email) {
+            if (! $this->isValidEmail($email)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

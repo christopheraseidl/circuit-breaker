@@ -10,5 +10,5 @@ interface MailerContract
     /**
      * Send email with subject and message.
      */
-    public function send(string $to, string $subject, string $message);
+    public function send(array $to, string $subject, string $message);
 }

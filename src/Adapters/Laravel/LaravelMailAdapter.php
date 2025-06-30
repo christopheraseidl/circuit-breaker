@@ -13,7 +13,7 @@ class LaravelMailAdapter implements MailerContract
     /**
      * Send email with subject and body.
      */
-    public function send(string $to, string $subject, string $body): void
+    public function send(array $to, string $subject, string $body): void
     {
         Mail::raw($body, function ($mail) use ($to, $subject) {
             $mail->to($to)->subject($subject);
