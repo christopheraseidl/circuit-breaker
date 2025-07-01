@@ -8,6 +8,11 @@ namespace christopheraseidl\CircuitBreaker\Contracts;
 interface FailureStrategyContract
 {
     /**
+     * Record successful operation and clear failure data as needed.
+     */
+    public function recordSuccess(CacheContract $cache, string $key): void;
+
+    /**
      * Record failure and return current failure count.
      */
     public function recordFailure(CacheContract $cache, string $key): int;

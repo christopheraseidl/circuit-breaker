@@ -58,6 +58,8 @@ class CircuitBreakerServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../../config/circuit-breaker.php' => config_path('circuit-breaker.php'),
         ], 'circuit-breaker-config');
+
+        $this->loadViewsFrom(__DIR__, 'circuit-breaker');
     }
 
     /**
@@ -68,13 +70,15 @@ class CircuitBreakerServiceProvider extends ServiceProvider
         $notifiers = config('circuit-breaker.notifiers', []);
         $notifierInstances = [];
 
-        foreach ($notifiers as $notifierConfig) {
-            $notifierInstances[] = match ($notifierConfig['type']) {
+        foreach ($notifiers as $type => $notifierConfig) {
+            $type = is_numeric($type) ? array_keys($notifiers)[$type] : $type;
+
+            $notifierInstances[] = match ($type) {
                 'email' => new EmailNotifier(
                     mailer: $this->app->make(MailerContract::class),
                     to: $notifierConfig['recipients']
                 ),
-                default => throw new \InvalidArgumentException("Unknown notifier type: {$notifierConfig['type']}")
+                default => throw new \InvalidArgumentException("Unknown notifier type: {$type}")
             };
         }
 

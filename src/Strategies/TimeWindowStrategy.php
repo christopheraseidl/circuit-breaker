@@ -31,6 +31,15 @@ class TimeWindowStrategy implements FailureStrategyContract
     }
 
     /**
+     * Record successful operation and clear failure data.
+     */
+    public function recordSuccess(CacheContract $cache, string $key): void
+    {
+        // Clear the failure timeline since we've had a success
+        $cache->forget($key.':timeline');
+    }
+
+    /**
      * Record failure and return current failure count.
      */
     public function recordFailure(CacheContract $cache, string $key): int

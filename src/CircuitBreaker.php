@@ -112,7 +112,7 @@ class CircuitBreaker implements CircuitBreakerContract
                 $this->logger->info("CircuitBreaker '{$this->name}' recovered and transitioned to CLOSED state at {$this->getTimestamp()}.");
             }
 
-            $this->cache->forget($this->getKey('failures'));
+            $this->strategy->recordSuccess($this->cache, $this->getKey('failures'));
         } catch (\Throwable $e) {
             $this->logger->warning('CircuitBreaker cache failure on recordSuccess', [
                 'breaker' => $this->name,

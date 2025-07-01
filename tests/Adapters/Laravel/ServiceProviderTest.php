@@ -20,7 +20,7 @@ it('registers singleton cache adapter binding', function () {
         ->and($firstCacheAdapter)->toBeInstanceOf(LaravelCacheAdapter::class);
 });
 
-it('registers log adapter binding', function () {
+it('registers singleton log adapter binding', function () {
     $firstLogAdapter = app(LoggerContract::class);
     $secondLogAdapter = app(LoggerContract::class);
 
@@ -28,7 +28,7 @@ it('registers log adapter binding', function () {
         ->and($firstLogAdapter)->toBeInstanceOf(LaravelLogAdapter::class);
 });
 
-it('registers mail adapter binding', function () {
+it('registers singleton mail adapter binding', function () {
     $firstMailAdapter = app(MailerContract::class);
     $secondMailAdapter = app(MailerContract::class);
 
@@ -38,9 +38,10 @@ it('registers mail adapter binding', function () {
 
 it('registers singleton notifier binding', function () {
     config()->set('circuit-breaker.notifiers', [
-        [
-            'type' => 'email',
-            'recipients' => ['admin@example.com', 'superviser@example.com']
+        'email' => [
+            'recipients' => ['admin@example.com', 'superviser@example.com'],
+            'from_address' => 'admin@example.com',
+            'from_name' => 'Administrator',
         ],
     ]);
 
@@ -64,16 +65,17 @@ it('merges config correctly', function () {
 
     expect(config('circuit-breaker.some_key'))->toBe('value');
     expect(config('circuit-breaker.notifiers'))->toBe([
-        [
-            'type' => 'email',
-            'recipients' => ['admin@example.com'],
+        'email' => [
+            'recipients' => [env('MAIL_FROM_ADDRESS')],
+            'from_address' => env('MAIL_FROM_ADDRESS'),
+            'from_name' => env('MAIL_FROM_NAME'),
         ],
     ]);
 });
 
 it('publishes config file', function () {
     $configFilePath = config_path('circuit-breaker.php');
-    
+
     expect($configFilePath)->not->toBeFile();
 
     $this->artisan('vendor:publish --tag=circuit-breaker-config')
