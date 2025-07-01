@@ -33,6 +33,11 @@ interface FailureStrategyContract
     public function shouldHalfOpenFromOpen(CacheContract $cache, string $key): bool;
 
     /**
+     * Return the wait time before retrying.
+     */
+    public function minWaitPassed(int $lastHalfOpenAttempt, int $halfOpenAttempts): bool;
+
+    /**
      * Get current failure count within time window.
      */
     public function getCurrentFailureCount(CacheContract $cache, string $key): int;

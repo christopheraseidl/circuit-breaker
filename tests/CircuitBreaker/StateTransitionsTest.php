@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 it('starts in closed state', function () {
-    $circuitBreaker = new CircuitBreaker('test-service', $this->cache, $this->logger, $this->notifier);
+    $circuitBreaker = new CircuitBreaker('test', $this->cache, $this->logger, $this->notifier);
 
     expect($circuitBreaker->getState())->toBe('closed');
     expect($circuitBreaker->isClosed())->toBeTrue();
@@ -24,7 +24,7 @@ it('starts in closed state', function () {
 });
 
 it('transitions from closed to open when failure threshold exceeded', function () {
-    $circuitBreaker = new CircuitBreaker('test-service', $this->cache, $this->logger, $this->notifier, [
+    $circuitBreaker = new CircuitBreaker('test', $this->cache, $this->logger, $this->notifier, [
         'failure_threshold' => 3,
     ]);
 
@@ -43,9 +43,9 @@ it('transitions from closed to open when failure threshold exceeded', function (
 });
 
 it('transitions from open to half-open after recovery timeout', function () {
-    $circuitBreaker = new CircuitBreaker('test-service', $this->cache, $this->logger, $this->notifier, [
+    $circuitBreaker = new CircuitBreaker('test', $this->cache, $this->logger, $this->notifier, [
         'failure_threshold' => 2,
-        'recovery_timeout' => 1,
+        'recovery_timeout_seconds' => 1,
     ]);
 
     // Force to open state
@@ -65,9 +65,9 @@ it('transitions from open to half-open after recovery timeout', function () {
 });
 
 it('transitions from half-open to closed on success', function () {
-    $circuitBreaker = new CircuitBreaker('test-service', $this->cache, $this->logger, $this->notifier, [
+    $circuitBreaker = new CircuitBreaker('test', $this->cache, $this->logger, $this->notifier, [
         'failure_threshold' => 1,
-        'recovery_timeout' => 10,
+        'recovery_timeout_seconds' => 10,
     ]);
 
     // Set to half-open state by transitioning through open first
@@ -86,10 +86,10 @@ it('transitions from half-open to closed on success', function () {
 });
 
 it('transitions from half-open to open on failure', function () {
-    $circuitBreaker = new CircuitBreaker('test-service', $this->cache, $this->logger, $this->notifier, [
+    $circuitBreaker = new CircuitBreaker('test', $this->cache, $this->logger, $this->notifier, [
         'failure_threshold' => 1,
-        'recovery_timeout' => 10,
-        'half_open_attempts' => 1,
+        'recovery_timeout_seconds' => 10,
+        'half_open_max_attempts' => 1,
     ]);
 
     // Set to half-open state by transitioning through open first

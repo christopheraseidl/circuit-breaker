@@ -67,9 +67,4 @@ interface CircuitBreakerContract
      * Return circuit breaker statistics.
      */
     public function getStats(): array;
-
-    /**
-     * Return the wait time before retrying
-     */
-    public function getWaitTime(): int;
 }

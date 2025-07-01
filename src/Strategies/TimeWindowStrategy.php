@@ -19,6 +19,8 @@ class TimeWindowStrategy implements FailureStrategyContract
 
     private int $halfOpenMaxAttempts;
 
+    private int $halfOpenDelay;
+
     /**
      * Create strategy with time window configuration.
      */
@@ -26,8 +28,9 @@ class TimeWindowStrategy implements FailureStrategyContract
     {
         $this->failureThreshold = $config['failure_threshold'] ?? 5;
         $this->windowSeconds = $config['window_seconds'] ?? 60;
-        $this->recoveryTimeout = $config['recovery_timeout'] ?? 300;
-        $this->halfOpenMaxAttempts = $config['half_open_attempts'] ?? 3;
+        $this->recoveryTimeout = $config['recovery_timeout_seconds'] ?? 300;
+        $this->halfOpenMaxAttempts = $config['half_open_max_attempts'] ?? 3;
+        $this->halfOpenDelay = $config['half_open_delay'] ?? 1;
     }
 
     /**
@@ -92,6 +95,14 @@ class TimeWindowStrategy implements FailureStrategyContract
     }
 
     /**
+     * Return the wait time before retrying.
+     */
+    public function minWaitPassed(int $lastHalfOpenAttempt, int $halfOpenAttempts): bool
+    {
+        return $this->getWaitTime($lastHalfOpenAttempt, $halfOpenAttempts) === 0;
+    }
+
+    /**
      * Get current failure count within time window.
      */
     public function getCurrentFailureCount(CacheContract $cache, string $key): int
@@ -107,9 +118,28 @@ class TimeWindowStrategy implements FailureStrategyContract
         return [
             'failure_threshold' => $this->failureThreshold,
             'window_seconds' => $this->windowSeconds,
-            'recovery_timeout' => $this->recoveryTimeout,
+            'recovery_timeout_seconds' => $this->recoveryTimeout,
             'half_open_max_attempts' => $this->halfOpenMaxAttempts,
         ];
+    }
+
+    /**
+     * Return the wait time in seconds before retrying.
+     */
+    private function getWaitTime(int $lastHalfOpenAttempt, int $halfOpenAttempts): int
+    {
+        $halfOpenAttempts = max($halfOpenAttempts, 1);
+        $timeSinceLastAttempt = (time() - $lastHalfOpenAttempt);
+        $baseDelay = $this->halfOpenDelay * (2 ** ($halfOpenAttempts - 1));
+        $jitter = $baseDelay * (rand(0, 20) / 100); // 0-20% jitter
+        $minDelay = $baseDelay + $jitter;
+
+        if ($timeSinceLastAttempt < $minDelay) {
+            $delay = $minDelay - $timeSinceLastAttempt;
+            return min($delay, 15);
+        }
+
+        return 0;
     }
 
     /**

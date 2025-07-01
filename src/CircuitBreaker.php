@@ -23,8 +23,6 @@ class CircuitBreaker implements CircuitBreakerContract
 
     private FailureStrategyContract $strategy;
 
-    private int $halfOpenDelay;
-
     public function __construct(
         private string $name,
         private CacheContract $cache,
@@ -33,7 +31,6 @@ class CircuitBreaker implements CircuitBreakerContract
         array $config = []
     ) {
         $this->strategy = $config['strategy'] ?? new TimeWindowStrategy($config);
-        $this->halfOpenDelay = $config['half_open_delay'] ?? 500;
     }
 
     /**
@@ -84,10 +81,14 @@ class CircuitBreaker implements CircuitBreakerContract
             }
 
             if ($this->isHalfOpen()) {
-                return ! $this->strategy->shouldOpenFromHalfOpen(
-                    $this->cache,
-                    $this->getKey('half_open_attempts')
-                );
+                return $this->strategy->minWaitPassed(
+                    $this->cache->get($this->getKey('last_half_open_attempt'), 0),
+                    $this->cache->get($this->getKey('half_open_attempts'), 0)
+                )
+                    && ! $this->strategy->shouldOpenFromHalfOpen(
+                        $this->cache,
+                        $this->getKey('half_open_attempts')
+                    );
             }
 
             return false;
@@ -133,7 +134,7 @@ class CircuitBreaker implements CircuitBreakerContract
                 $this->transitionToOpen();
                 $this->notify("Circuit breaker opened after {$failures} failures.");
             } elseif ($this->isHalfOpen()) {
-                $this->setKey('last_half_open_attempt', microtime(true));
+                $this->setKey('last_half_open_attempt', time());
                 $this->cache->increment($this->getKey('half_open_attempts'));
                 $halfOpenAttempts = $this->cache->get($this->getKey('half_open_attempts'), 0);
 
@@ -200,26 +201,6 @@ class CircuitBreaker implements CircuitBreakerContract
     }
 
     /**
-     * Return the wait time before retrying.
-     */
-    public function getWaitTime(): int
-    {
-        if (! $this->isHalfOpen()) {
-            return 0;
-        }
-
-        $lastAttempt = $this->cache->get($this->getKey('last_half_open_attempt'), 0);
-        $timeSinceLastAttempt = (microtime(true) - $lastAttempt) * 1000; // Convert to ms
-        $minDelay = $this->halfOpenDelay;
-
-        if ($timeSinceLastAttempt < $minDelay) {
-            return (int) ($minDelay - $timeSinceLastAttempt);
-        }
-
-        return 0;
-    }
-
-    /**
      * Transition circuit to open state when failure threshold is exceeded.
      */
     protected function transitionToOpen(): void
@@ -239,7 +220,7 @@ class CircuitBreaker implements CircuitBreakerContract
     {
         $this->setKey('state', self::STATE_HALF_OPEN);
         $this->setKey('half_open_attempts', 0);
-        $this->setKey('last_half_open_attempt', microtime(true));
+        $this->setKey('last_half_open_attempt', time());
 
         $this->logger->warning("CircuitBreaker '{$this->name}' transitioned to HALF_OPEN state at {$this->getTimestamp()}.", $this->getStats());
     }
@@ -322,7 +303,7 @@ class CircuitBreaker implements CircuitBreakerContract
         - Name: {$stats['name']} 
         - Current state: {$stats['state']}
         - Failure count: {$stats['failure_count']} / {$stats['failure_threshold']}
-        - Recovery timeout: {$stats['recovery_timeout']} seconds
+        - Recovery timeout: {$stats['recovery_timeout_seconds']} seconds
 
         This is an automatic notification. Please check the application logs for more details.
         ";
