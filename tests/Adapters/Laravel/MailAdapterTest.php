@@ -57,5 +57,5 @@ it('handles mail exceptions gracefully', function () {
         ->andThrow(new \Exception('Mail service unavailable'));
 
     expect(fn () => $this->mailer->send(['test@example.com'], 'Test Subject', 'Test Body'))
-        ->not->toThrow(\Exception::class);
+        ->toThrow(\Exception::class);
 });

@@ -158,7 +158,6 @@ class CircuitBreaker implements CircuitBreakerContract
     {
         try {
             $this->transitionToClosed();
-            $this->logger->info("CircuitBreaker '{$this->name}' manually reset to CLOSED state at {$this->getTimestamp()}.");
         } catch (\Throwable $e) {
             $this->logger->warning('CircuitBreaker cache failure during reset', [
                 'breaker' => $this->name,
@@ -231,7 +230,7 @@ class CircuitBreaker implements CircuitBreakerContract
     protected function transitionToClosed(): void
     {
         $this->cache->forget($this->getKey('state'));
-        $this->cache->forget($this->getKey('failures'));
+        $this->strategy->forget($this->cache, $this->getKey('failures'));
         $this->cache->forget($this->getKey('opened_at'));
         $this->cache->forget($this->getKey('half_open_attempts'));
         $this->cache->forget($this->getKey('last_half_open_attempt'));

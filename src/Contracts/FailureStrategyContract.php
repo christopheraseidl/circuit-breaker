@@ -46,4 +46,9 @@ interface FailureStrategyContract
      * Get strategy statistics array.
      */
     public function getStats(): array;
+
+    /**
+     * Forget provided cache key.
+     */
+    public function forget(CacheContract $cache, $key): bool;
 }

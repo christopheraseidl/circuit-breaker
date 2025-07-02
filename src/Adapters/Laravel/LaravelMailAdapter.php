@@ -30,6 +30,8 @@ class LaravelMailAdapter implements MailerContract
                 'subject' => $subject,
                 'message' => $body,
             ]);
+
+            throw $e;
         }
     }
 }

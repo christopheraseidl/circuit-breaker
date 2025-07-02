@@ -50,6 +50,12 @@ class TimeWindowStrategy implements FailureStrategyContract
         // Store failure with timestamp
         $now = time();
         $failures = $cache->get($key.':timeline', []);
+
+        // If cache data is corrupted (not an array), reset failures
+        if (! is_array($failures)) {
+            $failures = [];
+        }
+        
         $failures[] = $now;
 
         // Remove old failures outside the window
@@ -86,6 +92,10 @@ class TimeWindowStrategy implements FailureStrategyContract
     public function shouldHalfOpenFromOpen(CacheContract $cache, string $key): bool
     {
         $openedAt = $cache->get($key);
+
+        if (! $this->isValidTimestamp($openedAt)) {
+            return false;
+        }
 
         if ($openedAt && (Carbon::now()->timestamp - $openedAt) >= $this->recoveryTimeout) {
             return true;
@@ -124,6 +134,14 @@ class TimeWindowStrategy implements FailureStrategyContract
     }
 
     /**
+     * Forget provided cache key.
+     */
+    public function forget(CacheContract $cache, $key): bool
+    {
+        return $cache->forget($key . ':timeline');
+    }
+
+    /**
      * Return the wait time in seconds before retrying.
      */
     private function getWaitTime(int $lastHalfOpenAttempt, int $halfOpenAttempts): int
@@ -148,6 +166,12 @@ class TimeWindowStrategy implements FailureStrategyContract
     private function getFailuresInWindow(CacheContract $cache, string $key): int
     {
         $failures = $cache->get($key.':timeline', []);
+        
+        // If cache data is corrupted, return 0
+        if (! is_array($failures)) {
+            return 0;
+        }
+
         $recentFailures = $this->filterOldFailures($failures);
 
         return count($recentFailures);
@@ -160,8 +184,19 @@ class TimeWindowStrategy implements FailureStrategyContract
     {
         $now = time();
         // Keep only failures within the sliding window
-        $recentFailures = array_filter($failures, fn ($time) => $time > ($now - $this->windowSeconds));
+        $recentFailures = array_filter(
+            $failures,
+            fn ($time) => $time > ($now - $this->windowSeconds) && $this->isValidTimestamp($time)
+        );
 
         return $recentFailures;
+    }
+
+    /**
+     * Determine whether the provided value is a valid timestamp.
+     */
+    private function isValidTimestamp(mixed $timestamp): bool
+    {
+        return is_numeric($timestamp) && $timestamp > 0 && $timestamp <= time() + 1;
     }
 }

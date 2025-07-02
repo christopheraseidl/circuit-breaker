@@ -10,5 +10,5 @@ interface NotifierContract
     /**
      * Send notification with message and context.
      */
-    public function notify(string $message, array $context = []);
+    public function notify(string $message, array $context = []): void;
 }

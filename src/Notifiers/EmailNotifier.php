@@ -21,14 +21,16 @@ class EmailNotifier implements NotifierContract
     /**
      * Send email notification with message and context.
      */
-    public function notify(string $message, array $context = [])
+    public function notify(string $message, array $context = []): void
     {
         if (! $this->areValidEmails($this->to)) {
-            return;
+            throw new \InvalidArgumentException(
+                "Invalid email address found in circuit breaker email notifier recipients: {$this->getRecipientsAsString()}"
+            );
         }
 
         $this->mailer->send(
-            [$this->to],
+            $this->to,
             $context['subject'] ?? 'Circuit Breaker Alert',
             $message,
         );
@@ -56,5 +58,13 @@ class EmailNotifier implements NotifierContract
 
         // Use PHP's built-in email validation
         return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
+    }
+
+    /**
+     * Return the email recipients as a comma-separated list.
+     */
+    private function getRecipientsAsString(): string
+    {
+        return implode(', ', $this->to);
     }
 }
