@@ -1,6 +1,6 @@
 <?php
 
-namespace christopheraseidl\CircuitBreaker\Tests\Support;
+namespace christopheraseidl\CircuitBreaker\Tests\Helpers;
 
 use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Contracts\CacheContract;

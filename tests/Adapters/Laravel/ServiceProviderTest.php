@@ -53,6 +53,14 @@ it('registers singleton notifier binding', function () {
 });
 
 it('registers singleton circuit breaker factory', function () {
+    config()->set('circuit-breaker.notifiers', [
+        'email' => [
+            'recipients' => ['admin@example.com', 'superviser@example.com'],
+            'from_address' => 'admin@example.com',
+            'from_name' => 'Administrator',
+        ],
+    ]);
+
     $firstFactory = app(CircuitBreakerFactory::class);
     $secondFactory = app(CircuitBreakerFactory::class);
 
@@ -63,12 +71,15 @@ it('registers singleton circuit breaker factory', function () {
 it('merges config correctly', function () {
     config()->set('circuit-breaker.some_key', 'value');
 
+    // Custom value
     expect(config('circuit-breaker.some_key'))->toBe('value');
+
+    // Default value from file
     expect(config('circuit-breaker.notifiers'))->toBe([
         'email' => [
-            'recipients' => [env('MAIL_FROM_ADDRESS')],
-            'from_address' => env('MAIL_FROM_ADDRESS'),
-            'from_name' => env('MAIL_FROM_NAME'),
+            'recipients' => null,
+            'from_address' => null,
+            'from_name' => 'Circuit Breaker',
         ],
     ]);
 });

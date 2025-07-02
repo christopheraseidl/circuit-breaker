@@ -1,6 +1,6 @@
 <?php
 
-namespace christopheraseidl\CircuitBreaker\Tests\Support;
+namespace christopheraseidl\CircuitBreaker\Tests\Helpers;
 
 use christopheraseidl\CircuitBreaker\Contracts\MailerContract;
 
@@ -10,6 +10,7 @@ use christopheraseidl\CircuitBreaker\Contracts\MailerContract;
 class TestMailerAdapter implements MailerContract
 {
     public array $sent = [];
+
     private ?\Throwable $exceptionToThrow = null;
 
     /**
@@ -80,6 +81,7 @@ class TestMailerAdapter implements MailerContract
                 return true;
             }
         }
+
         return false;
     }
 
@@ -88,6 +90,6 @@ class TestMailerAdapter implements MailerContract
      */
     public function hasSubject(string $subject): bool
     {
-        return ! empty(array_filter($this->sent, fn($mail) => $mail['subject'] === $subject));
+        return ! empty(array_filter($this->sent, fn ($mail) => $mail['subject'] === $subject));
     }
 }

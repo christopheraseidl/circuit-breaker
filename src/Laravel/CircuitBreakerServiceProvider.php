@@ -55,11 +55,18 @@ class CircuitBreakerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Publishable config
         $this->publishes([
             __DIR__.'/../../config/circuit-breaker.php' => config_path('circuit-breaker.php'),
         ], 'circuit-breaker-config');
 
+        // Tell Laravel where to find views
         $this->loadViewsFrom(__DIR__, 'circuit-breaker');
+
+        // Publishable views
+        $this->publishes([
+            __DIR__ => resource_path('views/christopheraseidl/circuit-breaker'),
+        ], 'circuit-breaker-views');
     }
 
     /**

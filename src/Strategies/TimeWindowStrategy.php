@@ -5,6 +5,7 @@ namespace christopheraseidl\CircuitBreaker\Strategies;
 use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Contracts\CacheContract;
 use christopheraseidl\CircuitBreaker\Contracts\FailureStrategyContract;
+use christopheraseidl\CircuitBreaker\Support\Config;
 
 /**
  * Tracks failures within sliding time windows for circuit breaker decisions.
@@ -19,18 +20,27 @@ class TimeWindowStrategy implements FailureStrategyContract
 
     private int $halfOpenMaxAttempts;
 
-    private int $halfOpenDelay;
+    private int $halfOpenDelaySeconds;
 
     /**
      * Create strategy with time window configuration.
      */
     public function __construct(array $config = [])
     {
-        $this->failureThreshold = $config['failure_threshold'] ?? 5;
-        $this->windowSeconds = $config['window_seconds'] ?? 60;
-        $this->recoveryTimeout = $config['recovery_timeout_seconds'] ?? 300;
-        $this->halfOpenMaxAttempts = $config['half_open_max_attempts'] ?? 3;
-        $this->halfOpenDelay = $config['half_open_delay'] ?? 1;
+        $this->failureThreshold = $config['failure_threshold']
+            ?? Config::get('defaults.failure_threshold', 5);
+
+        $this->windowSeconds = $config['window_seconds']
+            ?? Config::get('defaults.window_seconds', 60);
+
+        $this->recoveryTimeout = $config['recovery_timeout_seconds']
+            ?? Config::get('defaults.recovery_timeout_seconds', 300);
+
+        $this->halfOpenMaxAttempts = $config['half_open_max_attempts']
+            ?? Config::get('defaults.half_open_max_attempts', 3);
+
+        $this->halfOpenDelaySeconds = $config['half_open_delay_seconds']
+            ?? Config::get('defaults.half_open_delay_seconds', 1);
     }
 
     /**
@@ -55,7 +65,7 @@ class TimeWindowStrategy implements FailureStrategyContract
         if (! is_array($failures)) {
             $failures = [];
         }
-        
+
         $failures[] = $now;
 
         // Remove old failures outside the window
@@ -130,6 +140,7 @@ class TimeWindowStrategy implements FailureStrategyContract
             'window_seconds' => $this->windowSeconds,
             'recovery_timeout_seconds' => $this->recoveryTimeout,
             'half_open_max_attempts' => $this->halfOpenMaxAttempts,
+            'half_open_delay_seconds' => $this->halfOpenDelaySeconds,
         ];
     }
 
@@ -138,7 +149,7 @@ class TimeWindowStrategy implements FailureStrategyContract
      */
     public function forget(CacheContract $cache, $key): bool
     {
-        return $cache->forget($key . ':timeline');
+        return $cache->forget($key.':timeline');
     }
 
     /**
@@ -148,12 +159,13 @@ class TimeWindowStrategy implements FailureStrategyContract
     {
         $halfOpenAttempts = max($halfOpenAttempts, 1);
         $timeSinceLastAttempt = (time() - $lastHalfOpenAttempt);
-        $baseDelay = $this->halfOpenDelay * (2 ** ($halfOpenAttempts - 1));
+        $baseDelay = $this->halfOpenDelaySeconds * (2 ** ($halfOpenAttempts - 1));
         $jitter = $baseDelay * (rand(0, 20) / 100); // 0-20% jitter
         $minDelay = $baseDelay + $jitter;
 
         if ($timeSinceLastAttempt < $minDelay) {
             $delay = $minDelay - $timeSinceLastAttempt;
+
             return min($delay, 15);
         }
 
@@ -166,7 +178,7 @@ class TimeWindowStrategy implements FailureStrategyContract
     private function getFailuresInWindow(CacheContract $cache, string $key): int
     {
         $failures = $cache->get($key.':timeline', []);
-        
+
         // If cache data is corrupted, return 0
         if (! is_array($failures)) {
             return 0;

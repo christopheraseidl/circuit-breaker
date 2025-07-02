@@ -3,9 +3,9 @@
 namespace christopheraseidl\CircuitBreaker\Tests\CircuitBreaker;
 
 use christopheraseidl\CircuitBreaker\CircuitBreaker;
-use christopheraseidl\CircuitBreaker\Tests\Support\TestCacheAdapter;
-use christopheraseidl\CircuitBreaker\Tests\Support\TestLoggerAdapter;
-use christopheraseidl\CircuitBreaker\Tests\Support\TestNotifierAdapter;
+use christopheraseidl\CircuitBreaker\Tests\Helpers\TestCacheAdapter;
+use christopheraseidl\CircuitBreaker\Tests\Helpers\TestLoggerAdapter;
+use christopheraseidl\CircuitBreaker\Tests\Helpers\TestNotifierAdapter;
 
 beforeEach(function () {
     $this->cache = new TestCacheAdapter;
