@@ -12,6 +12,7 @@ use christopheraseidl\CircuitBreaker\Contracts\MailerContract;
 use christopheraseidl\CircuitBreaker\Contracts\NotifierContract;
 use christopheraseidl\CircuitBreaker\Notifiers\ChainNotifier;
 use christopheraseidl\CircuitBreaker\Notifiers\EmailNotifier;
+use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -83,7 +84,7 @@ class CircuitBreakerServiceProvider extends ServiceProvider
             $notifierInstances[] = match ($type) {
                 'email' => new EmailNotifier(
                     mailer: $this->app->make(MailerContract::class),
-                    to: $notifierConfig['recipients']
+                    to: Arr::wrap($notifierConfig['recipients'])
                 ),
                 default => throw new \InvalidArgumentException("Unknown notifier type: {$type}")
             };
