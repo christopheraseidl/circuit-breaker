@@ -2,6 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\CircuitBreaker;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\CircuitBreaker;
 use christopheraseidl\CircuitBreaker\Tests\Helpers\TestCacheAdapter;
 use christopheraseidl\CircuitBreaker\Tests\Helpers\TestLoggerAdapter;
@@ -31,7 +32,7 @@ it('allows two attempts in half-open state', function () {
     expect($breaker->isOpen())->toBeTrue();
 
     // Wait for recovery timeout
-    sleep(2);
+    Carbon::setTestNow(now()->addSeconds(2));
 
     // Should transition to half-open and allow attempt
     expect($breaker->canAttempt())->toBeTrue();
@@ -60,7 +61,7 @@ it('enforces delay between half-open attempts', function () {
     $breaker->recordFailure();
 
     // Wait for recovery timeout
-    sleep(2);
+    Carbon::setTestNow(now()->addSeconds(2));
 
     // First attempt allowed (transitions to half-open)
     expect($breaker->canAttempt())->toBeTrue();
@@ -72,7 +73,7 @@ it('enforces delay between half-open attempts', function () {
     expect($breaker->canAttempt())->toBeFalse();
 
     // Wait for delay to pass
-    sleep(3);
+    Carbon::setTestNow(now()->addSeconds(3));
 
     // Now should allow attempt
     expect($breaker->canAttempt())->toBeTrue();
@@ -93,7 +94,7 @@ it('tracks half-open attempt count', function () {
     $breaker->recordFailure();
 
     // Wait for recovery timeout
-    sleep(2);
+    Carbon::setTestNow(now()->addSeconds(2));
 
     // Transition to half-open
     expect($breaker->canAttempt())->toBeTrue();
@@ -136,7 +137,7 @@ it('calculates wait time correctly', function () {
     $breaker->recordFailure();
 
     // Wait for recovery timeout
-    sleep(2);
+    Carbon::setTestNow(now()->addSeconds(2));
 
     // First attempt (transitions to half-open)
     expect($breaker->canAttempt())->toBeTrue();
@@ -147,7 +148,7 @@ it('calculates wait time correctly', function () {
     expect($breaker->canAttempt())->toBeFalse();
 
     // Wait to pass the max delay of 1.2 seconds with jitter
-    usleep(1300000); // 1.3 seconds
+    Carbon::setTestNow(now()->addMilliseconds(1300)); // 1.3 seconds
     expect($breaker->canAttempt())->toBeTrue();
 
     // Second failure - base delay should be max 2.4 seconds with jitter and exponential backoff
@@ -155,6 +156,6 @@ it('calculates wait time correctly', function () {
     expect($breaker->canAttempt())->toBeFalse();
 
     // Wait for the exponential delay
-    sleep(3);
+    Carbon::setTestNow(now()->addSeconds(3));
     expect($breaker->canAttempt())->toBeTrue();
 });

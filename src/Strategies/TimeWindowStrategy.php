@@ -58,7 +58,7 @@ class TimeWindowStrategy implements FailureStrategyContract
     public function recordFailure(CacheContract $cache, string $key): int
     {
         // Store failure with timestamp
-        $now = time();
+        $now = Carbon::now()->timestamp;
         $failures = $cache->get($key.':timeline', []);
 
         // If cache data is corrupted (not an array), reset failures
@@ -158,7 +158,7 @@ class TimeWindowStrategy implements FailureStrategyContract
     private function getWaitTime(int $lastHalfOpenAttempt, int $halfOpenAttempts): int
     {
         $halfOpenAttempts = max($halfOpenAttempts, 1);
-        $timeSinceLastAttempt = (time() - $lastHalfOpenAttempt);
+        $timeSinceLastAttempt = (Carbon::now()->timestamp - $lastHalfOpenAttempt);
         $baseDelay = $this->halfOpenDelaySeconds * (2 ** ($halfOpenAttempts - 1));
         $jitter = $baseDelay * (rand(0, 20) / 100); // 0-20% jitter
         $minDelay = $baseDelay + $jitter;
@@ -194,7 +194,7 @@ class TimeWindowStrategy implements FailureStrategyContract
      */
     private function filterOldFailures(array $failures): array
     {
-        $now = time();
+        $now = Carbon::now()->timestamp;
         // Keep only failures within the sliding window
         $recentFailures = array_filter(
             $failures,
@@ -209,6 +209,6 @@ class TimeWindowStrategy implements FailureStrategyContract
      */
     private function isValidTimestamp(mixed $timestamp): bool
     {
-        return is_numeric($timestamp) && $timestamp > 0 && $timestamp <= time() + 1;
+        return is_numeric($timestamp) && $timestamp > 0 && $timestamp <= Carbon::now()->timestamp + 1;
     }
 }

@@ -2,8 +2,8 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\Adapters\Laravel;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Adapters\Laravel\LaravelCacheAdapter;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {

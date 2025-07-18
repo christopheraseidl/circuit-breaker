@@ -2,6 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\Strategies;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Strategies\TimeWindowStrategy;
 use christopheraseidl\CircuitBreaker\Support\Config;
 use christopheraseidl\CircuitBreaker\Tests\Helpers\TestCacheAdapter;
@@ -35,7 +36,7 @@ it('expires old failures outside window', function () {
     expect($strategy->getCurrentFailureCount($this->cache, 'test-key'))->toBe(1);
 
     // Wait for window to expire
-    sleep(3);
+    Carbon::setTestNow(now()->addSeconds(3));
 
     // Old failure should be expired
     expect($strategy->getCurrentFailureCount($this->cache, 'test-key'))->toBe(0);
@@ -66,14 +67,14 @@ it('determines when to transition to half-open', function () {
     $strategy = new TimeWindowStrategy(['recovery_timeout_seconds' => 2]); // 2 seconds for testing
 
     // Set opened_at timestamp
-    $openedAt = time();
+    $openedAt = Carbon::now()->timestamp;
     $this->cache->put('test-key', $openedAt);
 
     // Should not transition immediately
     expect($strategy->shouldHalfOpenFromOpen($this->cache, 'test-key'))->toBeFalse();
 
     // Wait for recovery timeout
-    sleep(3);
+    Carbon::setTestNow(now()->addSeconds(3));
 
     // Should transition after timeout
     expect($strategy->shouldHalfOpenFromOpen($this->cache, 'test-key'))->toBeTrue();
@@ -148,11 +149,11 @@ it('accepts default configuration', function () {
     expect($strategy->shouldOpenFromClosed($this->cache, 'test-key'))->toBeTrue();
 
     // Test recovery timeout (1 second)
-    $openedAt = time();
+    $openedAt = Carbon::now()->timestamp;
     $this->cache->put('test-key', $openedAt);
     expect($strategy->shouldHalfOpenFromOpen($this->cache, 'test-key'))->toBeFalse();
 
-    sleep(1);
+    Carbon::setTestNow(now()->addSeconds(1));
 
     expect($strategy->shouldHalfOpenFromOpen($this->cache, 'test-key'))->toBeTrue();
 

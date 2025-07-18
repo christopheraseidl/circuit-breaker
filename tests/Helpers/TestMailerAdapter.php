@@ -2,6 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\Helpers;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Contracts\MailerContract;
 
 /**
@@ -26,7 +27,7 @@ class TestMailerAdapter implements MailerContract
             'to' => $to,
             'subject' => $subject,
             'message' => $message,
-            'timestamp' => time(),
+            'timestamp' => Carbon::now()->timestamp,
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\Helpers;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Contracts\LoggerContract;
 
 /**
@@ -57,7 +58,7 @@ class TestLoggerAdapter implements LoggerContract
             'level' => $level,
             'message' => (string) $message,
             'context' => $context,
-            'timestamp' => time(),
+            'timestamp' => Carbon::now()->timestamp,
         ];
     }
 
