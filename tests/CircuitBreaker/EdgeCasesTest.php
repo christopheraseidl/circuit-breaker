@@ -2,6 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\CircuitBreaker;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\CircuitBreaker;
 use christopheraseidl\CircuitBreaker\Contracts\CacheContract;
 use christopheraseidl\CircuitBreaker\Contracts\LoggerContract;
@@ -91,7 +92,7 @@ it('handles concurrent state changes', function () {
 
     // Simulate another process opening the circuit
     $this->cache->put('circuit_breaker:test:state', 'open');
-    $this->cache->put('circuit_breaker:test:opened_at', time());
+    $this->cache->put('circuit_breaker:test:opened_at', Carbon::now()->timestamp);
 
     // Should respect the state change
     expect($breaker->isOpen())->toBeTrue();

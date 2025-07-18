@@ -134,7 +134,7 @@ class CircuitBreaker implements CircuitBreakerContract
                 $this->transitionToOpen();
                 $this->notify("Circuit breaker opened after {$failures} failures.");
             } elseif ($this->isHalfOpen()) {
-                $this->setKey('last_half_open_attempt', time());
+                $this->setKey('last_half_open_attempt', Carbon::now()->timestamp);
                 $this->cache->increment($this->getKey('half_open_attempts'));
                 $halfOpenAttempts = $this->cache->get($this->getKey('half_open_attempts'), 0);
 
@@ -219,7 +219,7 @@ class CircuitBreaker implements CircuitBreakerContract
     {
         $this->setKey('state', self::STATE_HALF_OPEN);
         $this->setKey('half_open_attempts', 0);
-        $this->setKey('last_half_open_attempt', time());
+        $this->setKey('last_half_open_attempt', Carbon::now()->timestamp);
 
         $this->logger->warning("CircuitBreaker '{$this->name}' transitioned to HALF_OPEN state at {$this->getTimestamp()}.", $this->getStats());
     }

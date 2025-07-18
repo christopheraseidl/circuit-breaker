@@ -2,6 +2,7 @@
 
 namespace christopheraseidl\CircuitBreaker\Tests\Helpers;
 
+use Carbon\Carbon;
 use christopheraseidl\CircuitBreaker\Contracts\NotifierContract;
 
 /**
@@ -16,7 +17,7 @@ class TestNotifierAdapter implements NotifierContract
         $this->notifications[] = [
             'message' => $message,
             'context' => $context,
-            'timestamp' => time(),
+            'timestamp' => Carbon::now()->timestamp,
         ];
     }
 
